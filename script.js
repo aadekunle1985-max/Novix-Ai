@@ -11,15 +11,14 @@ function addMessage(text, type) {
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-function sendMessage() {
+async function sendMessage() {
     const text = userInput.value.trim();
 
-    if (text === "") return;
+    if (!text) return;
 
     addMessage(text, "user");
     userInput.value = "";
 
-    // Typing indicator
     const typing = document.createElement("div");
     typing.className = "bot-message";
     typing.id = "typing";
@@ -27,14 +26,28 @@ function sendMessage() {
     chatBox.appendChild(typing);
     chatBox.scrollTop = chatBox.scrollHeight;
 
-    setTimeout(() => {
+    try {
+        const response = await fetch("https://novix-ai-3.onrender.com/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message: text
+            })
+        });
+
+        const data = await response.json();
+
         typing.remove();
 
-        addMessage(
-            "I'm currently in demo mode. In the next step, I'll connect to Claude AI and answer your questions for real!",
-            "bot"
-        );
-    }, 1200);
+        addMessage(data.reply || "No response received.", "bot");
+
+    } catch (error) {
+        typing.remove();
+        addMessage("❌ Error connecting to Novix AI server.", "bot");
+        console.error(error);
+    }
 }
 
 sendBtn.addEventListener("click", sendMessage);
