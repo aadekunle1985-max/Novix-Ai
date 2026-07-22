@@ -3,9 +3,14 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const Anthropic = require("@anthropic-ai/sdk");
+const { GoogleGenAI } = require("@google/genai");
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
 
 app.use(cors());
 app.use(express.json());
@@ -13,11 +18,7 @@ app.use(express.json());
 // Serve frontend files
 app.use(express.static(__dirname));
 
-const anthropic = new Anthropic({
-  apiKey: process.env.CLAUDE_API_KEY,
-});
-
-// Open website
+// Home page
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
@@ -33,32 +34,24 @@ app.post("/chat", async (req, res) => {
       });
     }
 
-    const response = await anthropic.messages.create({
-      model: "claude-3-5-haiku-latest",
-      max_tokens: 1024,
-      messages: [
-        {
-          role: "user",
-          content: message
-        }
-      ]
+    const result = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: message,
     });
 
     res.json({
-      reply: response.content[0].text
+      reply: result.text,
     });
 
   } catch (error) {
     console.error(error);
 
     res.status(500).json({
-      reply: "Something went wrong."
+      reply: "Sorry, an error occurred while talking to Gemini."
     });
   }
 });
 
-const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
-  console.log(`Novix AI running on port ${PORT}`);
+  console.log(`🚀 Novix AI is running on port ${PORT}`);
 });
