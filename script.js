@@ -2,11 +2,16 @@ const chatBox = document.getElementById("chatBox");
 const userInput = document.getElementById("userInput");
 const sendBtn = document.getElementById("sendBtn");
 
-function addMessage(sender, message) {
-    const div = document.createElement("div");
-    div.className = sender === "user" ? "user-message" : "bot-message";
-    div.innerHTML = `<strong>${sender === "user" ? "You" : "Novix AI"}:</strong> ${message}`;
-    chatBox.appendChild(div);
+function addMessage(sender, text) {
+    const message = document.createElement("div");
+
+    message.className = sender === "user"
+        ? "user-message"
+        : "bot-message";
+
+    message.innerHTML = text.replace(/\n/g, "<br>");
+
+    chatBox.appendChild(message);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
@@ -17,6 +22,8 @@ async function sendMessage() {
 
     addMessage("user", message);
     userInput.value = "";
+
+    addMessage("bot", "🤖 Thinking...");
 
     try {
         const response = await fetch("/chat", {
@@ -31,21 +38,26 @@ async function sendMessage() {
 
         const data = await response.json();
 
-        if (data.reply) {
-            addMessage("bot", data.reply);
-        } else {
-            addMessage("bot", "No response received.");
-        }
+        // Remove the "Thinking..." message
+        chatBox.removeChild(chatBox.lastChild);
+
+        addMessage("bot", data.reply);
 
     } catch (error) {
         console.error(error);
-        addMessage("bot", "Something went wrong.");
+
+        chatBox.removeChild(chatBox.lastChild);
+
+        addMessage(
+            "bot",
+            "❌ Unable to connect to Novix AI."
+        );
     }
 }
 
 sendBtn.addEventListener("click", sendMessage);
 
-userInput.addEventListener("keypress", function (e) {
+userInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
         sendMessage();
     }
