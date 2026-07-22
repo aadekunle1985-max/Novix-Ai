@@ -3,19 +3,17 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const { GoogleGenAI } = require("@google/genai");
+const Groq = require("groq-sdk");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
 });
 
 app.use(cors());
 app.use(express.json());
-
-// Serve frontend files
 app.use(express.static(__dirname));
 
 // Home page
@@ -34,20 +32,31 @@ app.post("/chat", async (req, res) => {
       });
     }
 
-    const result = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: message,
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
+      messages: [
+        {
+          role: "system",
+          content: "You are Novix AI, a helpful and friendly AI assistant."
+        },
+        {
+          role: "user",
+          content: message
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 1024
     });
 
     res.json({
-      reply: result.text,
+      reply: completion.choices[0].message.content
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("Groq Error:", error);
 
     res.status(500).json({
-      reply: "Sorry, an error occurred while talking to Gemini."
+      reply: "Sorry, I couldn't process your request."
     });
   }
 });
