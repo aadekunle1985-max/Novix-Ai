@@ -1,54 +1,64 @@
-const chatBox = document.getElementById("chat-box");
-const userInput = document.getElementById("user-input");
-const sendBtn = document.getElementById("send-btn");
+require("dotenv").config();
 
-const API_URL = "/chat";
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
+const Anthropic = require("@anthropic-ai/sdk");
 
-function addMessage(sender, message) {
-    const div = document.createElement("div");
-    div.className = sender === "user" ? "user-message" : "bot-message";
-    div.textContent = message;
-    chatBox.appendChild(div);
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
+const app = express();
 
-async function sendMessage() {
-    const message = userInput.value.trim();
+app.use(cors());
+app.use(express.json());
 
-    if (!message) return;
+// Serve frontend files
+app.use(express.static(__dirname));
 
-    addMessage("user", message);
-    userInput.value = "";
+const anthropic = new Anthropic({
+  apiKey: process.env.CLAUDE_API_KEY,
+});
 
-    try {
-        const response = await fetch(API_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                message: message
-            })
-        });
+// Open website
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
 
-        const data = await response.json();
+// Chat endpoint
+app.post("/chat", async (req, res) => {
+  try {
+    const { message } = req.body;
 
-        if (data.reply) {
-            addMessage("bot", data.reply);
-        } else {
-            addMessage("bot", "No response received.");
+    if (!message) {
+      return res.status(400).json({
+        reply: "Please enter a message."
+      });
+    }
+
+    const response = await anthropic.messages.create({
+      model: "claude-3-5-haiku-latest",
+      max_tokens: 1024,
+      messages: [
+        {
+          role: "user",
+          content: message
         }
+      ]
+    });
 
-    } catch (error) {
-        console.error(error);
-        addMessage("bot", "Something went wrong.");
-    }
-}
+    res.json({
+      reply: response.content[0].text
+    });
 
-sendBtn.addEventListener("click", sendMessage);
+  } catch (error) {
+    console.error(error);
 
-userInput.addEventListener("keypress", function (e) {
-    if (e.key === "Enter") {
-        sendMessage();
-    }
+    res.status(500).json({
+      reply: "Something went wrong."
+    });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Novix AI running on port ${PORT}`);
 });
