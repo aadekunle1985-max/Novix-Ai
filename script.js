@@ -1,67 +1,52 @@
-const chatBox = document.getElementById("chatBox");
-const userInput = document.getElementById("userInput");
-const sendBtn = document.getElementById("sendBtn");
-const newChatBtn = document.getElementById("newChat");
+const chatBox = document.getElementById("chat-box");
+const userInput = document.getElementById("user-input");
+const sendBtn = document.getElementById("send-btn");
 
-function addMessage(text, type) {
-    const message = document.createElement("div");
-    message.className = type === "user" ? "user-message" : "bot-message";
-    message.textContent = text;
-    chatBox.appendChild(message);
+function addMessage(sender, message) {
+    const div = document.createElement("div");
+    div.className = sender;
+    div.innerHTML = `<strong>${sender === "user" ? "You" : "Novix AI"}:</strong> ${message}`;
+    chatBox.appendChild(div);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 async function sendMessage() {
-    const text = userInput.value.trim();
+    const message = userInput.value.trim();
 
-    if (!text) return;
+    if (!message) return;
 
-    addMessage(text, "user");
+    addMessage("user", message);
     userInput.value = "";
 
-    const typing = document.createElement("div");
-    typing.className = "bot-message";
-    typing.id = "typing";
-    typing.textContent = "🤖 Novix AI is thinking...";
-    chatBox.appendChild(typing);
-    chatBox.scrollTop = chatBox.scrollHeight;
-
     try {
-        const response = await fetch("https://novix-ai-3.onrender.com/chat", {
+        const response = await fetch("/chat", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                message: text
+                message: message
             })
         });
 
         const data = await response.json();
 
-        typing.remove();
-
-        addMessage(data.reply || "No response received.", "bot");
+        if (data.reply) {
+            addMessage("bot", data.reply);
+        } else {
+            addMessage("bot", "No response received.");
+        }
 
     } catch (error) {
-        typing.remove();
-        addMessage("❌ Error connecting to Novix AI server.", "bot");
         console.error(error);
+        addMessage("bot", "Something went wrong.");
     }
 }
 
 sendBtn.addEventListener("click", sendMessage);
 
-userInput.addEventListener("keydown", (e) => {
+userInput.addEventListener("keypress", function (e) {
     if (e.key === "Enter") {
         sendMessage();
     }
-});
-
-newChatBtn.addEventListener("click", () => {
-    chatBox.innerHTML = `
-        <div class="bot-message">
-            👋 Welcome back to <strong>Novix AI</strong>! Start a new conversation.
-        </div>
-    `;
 });
