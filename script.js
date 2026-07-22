@@ -1,10 +1,10 @@
-const chatBox = document.getElementById("chat-box");
-const userInput = document.getElementById("user-input");
-const sendBtn = document.getElementById("send-btn");
+const chatBox = document.getElementById("chatBox");
+const userInput = document.getElementById("userInput");
+const sendBtn = document.getElementById("sendBtn");
 
 function addMessage(sender, message) {
     const div = document.createElement("div");
-    div.className = sender;
+    div.className = sender === "user" ? "user-message" : "bot-message";
     div.innerHTML = `<strong>${sender === "user" ? "You" : "Novix AI"}:</strong> ${message}`;
     chatBox.appendChild(div);
     chatBox.scrollTop = chatBox.scrollHeight;
