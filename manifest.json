@@ -1,7 +1,7 @@
 {
   "name": "Novix AI",
   "short_name": "Novix",
-  "description": "Your AI assistant powered by Groq.",
+  "description": "Your intelligent AI assistant.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",
